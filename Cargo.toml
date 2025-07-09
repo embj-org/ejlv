@@ -2,6 +2,8 @@
 name = "ejlv_cli"
 version = "0.2.0"
 edition = "2024"
+license-file = "LICENSE"
+description = "A command-line interface tool for dispatching jobs to [EJD](https://github.com/embj-org/ej) (EJ Dispatcher) in the [LVGL](https://github.com/lvgl/lvgl.git) testing workspace."
 
 [dependencies]
 ej-dispatcher-sdk = "0.3.3"
