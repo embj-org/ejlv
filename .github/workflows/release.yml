@@ -76,3 +76,14 @@ jobs:
           draft: false
           body_path: release.md
           prerelease: false 
+  publish:
+    needs: [tag, release]
+    if: needs.tag.outputs.tag_created == 'true'
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: swatinem/rust-cache@v4
+      - name: Run cargo publish 
+        run: |
+          cargo login ${{ secrets.CARGO_REGISTRY_TOKEN }} && cargo publish --verbose --locked
