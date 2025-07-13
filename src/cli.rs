@@ -17,7 +17,7 @@ pub struct Cli {
 /// Available commands for the EJ CLI testing and setup tool.
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Dispatch a test build job (results printed to screen)
+    /// Dispatch a test build job
     DispatchBuild {
         /// Path to the EJD's unix socket
         #[arg(short, long)]
@@ -26,17 +26,37 @@ pub enum Commands {
         job: DispatchArgs,
     },
 
-    /// Dispatch a test run job (results printed to screen)
+    /// Dispatch a test run job
     DispatchRun {
         /// Path to the EJD's unix socket
         #[arg(short, long)]
         socket: PathBuf,
 
-        #[command(flatten)]
-        job: DispatchArgs,
+        /// Path to the output comment (.md)
+        #[arg(long)]
+        comment_path: PathBuf,
 
         #[command(flatten)]
-        pr: Option<PrArgs>,
+        job: DispatchArgs,
+    },
+
+    /// Comment PR
+    CommentPR {
+        /// Path to the output comment (.md)
+        #[arg(long)]
+        comment_path: PathBuf,
+
+        /// PR number associated with this run
+        #[arg(long)]
+        pr_number: u64,
+
+        /// Github token with write access
+        #[arg(long)]
+        gh_token: String,
+
+        /// A comment (hidden) signature
+        #[arg(long)]
+        signature: String,
     },
 }
 
@@ -58,15 +78,4 @@ pub struct DispatchArgs {
     /// Optional git remote token
     #[arg(long)]
     pub remote_token: Option<String>,
-}
-
-#[derive(Args)]
-pub struct PrArgs {
-    /// PR number associated with this run
-    #[arg(long)]
-    pub pr_number: u64,
-
-    /// Github token with write access.
-    #[arg(long)]
-    pub gh_token: String,
 }

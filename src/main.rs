@@ -1,9 +1,9 @@
 use std::{path::PathBuf, time::Duration};
 
-use crate::cli::{Cli, Commands, DispatchArgs, PrArgs};
+use crate::cli::{Cli, Commands, DispatchArgs};
 use crate::comment::generate_comment;
 use crate::ej::fetch_latest_job_result_from_commit;
-use crate::gh::{get_latest_master_commit, get_pr_comment};
+use crate::gh::{add_comment_signature, get_latest_master_commit, get_pr_comment};
 use crate::parser::parse_run_result;
 use crate::prelude::*;
 use crate::result::calculate_result_delta;
@@ -23,31 +23,18 @@ use tracing::{debug, error, info};
 pub struct Ctx {
     pub gh_repo: String,
     pub gh_owner: String,
-    pub token: Option<String>,
-    pub socket: PathBuf,
 }
 
+impl Default for Ctx {
+    fn default() -> Self {
+        Self::new("lvgl", "lvgl")
+    }
+}
 impl Ctx {
-    pub fn new(
-        socket: PathBuf,
-        gh_repo: impl Into<String>,
-        gh_owner: impl Into<String>,
-        token: Option<String>,
-    ) -> Self {
+    pub fn new(gh_repo: impl Into<String>, gh_owner: impl Into<String>) -> Self {
         Self {
-            socket,
             gh_repo: gh_repo.into(),
             gh_owner: gh_owner.into(),
-            token,
-        }
-    }
-    pub fn build_octocrab(&self) -> Result<Octocrab> {
-        if let Some(token) = &self.token {
-            Ok(Octocrab::builder()
-                .personal_token(token.to_string())
-                .build()?)
-        } else {
-            Ok(Octocrab::builder().build()?)
         }
     }
 }
@@ -72,11 +59,16 @@ pub async fn on_build(socket: PathBuf, job: DispatchArgs) -> Result<()> {
     }
 }
 
-pub async fn on_run(ctx: Ctx, job: DispatchArgs, pr: Option<PrArgs>) -> Result<()> {
-    let octocrab = ctx.build_octocrab()?;
+pub async fn on_run(
+    ctx: Ctx,
+    socket: PathBuf,
+    job: DispatchArgs,
+    comment_path: PathBuf,
+) -> Result<()> {
+    let octocrab = Octocrab::builder().build()?;
     info!("Dispatching run");
     let result = dispatch_run(
-        &ctx.socket,
+        &socket,
         job.commit_hash,
         job.remote_url,
         job.remote_token,
@@ -92,7 +84,7 @@ pub async fn on_run(ctx: Ctx, job: DispatchArgs, pr: Option<PrArgs>) -> Result<(
     debug!("Job result {}", result);
     let latest_master_commit = get_latest_master_commit(&ctx, &octocrab).await?;
     let master_result = if let Some(result) =
-        fetch_latest_job_result_from_commit(&ctx, latest_master_commit).await?
+        fetch_latest_job_result_from_commit(&socket, latest_master_commit).await?
     {
         info!("Parsing latest master result");
         parse_run_result(result)?
@@ -108,23 +100,37 @@ pub async fn on_run(ctx: Ctx, job: DispatchArgs, pr: Option<PrArgs>) -> Result<(
 
     info!("Generating comment");
     let comment_body = generate_comment(&result);
-    debug!(comment_body);
+    tokio::fs::write(&comment_path, comment_body).await?;
+    info!("Comment available in {}", comment_path.display());
 
-    if let Some(pr) = pr {
-        let pr_comment = get_pr_comment(&ctx, &octocrab, pr.pr_number).await?;
-        if let Some(comment) = pr_comment {
-            info!("Updating existing comment {}", comment.id);
-            octocrab
-                .issues(ctx.gh_owner, ctx.gh_repo)
-                .update_comment(comment.id, comment_body)
-                .await?;
-        } else {
-            info!("Creating new comment");
-            octocrab
-                .issues(ctx.gh_owner, ctx.gh_repo)
-                .create_comment(pr.pr_number, comment_body)
-                .await?;
-        }
+    Ok(())
+}
+
+pub async fn on_comment_pr(
+    ctx: Ctx,
+    comment_path: PathBuf,
+    pr_number: u64,
+    gh_token: String,
+    signature: String,
+) -> Result<()> {
+    let octocrab = Octocrab::builder().personal_token(gh_token).build()?;
+    let pr_comment = get_pr_comment(&ctx, &octocrab, pr_number, &signature).await?;
+
+    let comment_body = tokio::fs::read_to_string(&comment_path).await?;
+    let comment_body = add_comment_signature(comment_body, &signature);
+
+    if let Some(comment) = pr_comment {
+        info!("Updating existing comment {}", comment.id);
+        octocrab
+            .issues(ctx.gh_owner, ctx.gh_repo)
+            .update_comment(comment.id, comment_body)
+            .await?;
+    } else {
+        info!("Creating new comment");
+        octocrab
+            .issues(ctx.gh_owner, ctx.gh_repo)
+            .create_comment(pr_number, comment_body)
+            .await?;
     }
     Ok(())
 }
@@ -136,13 +142,22 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Commands::DispatchBuild { socket, job } => on_build(socket, job).await,
-        Commands::DispatchRun { socket, job, pr } => {
-            let ctx = if let Some(pr) = &pr {
-                Ctx::new(socket, "lvgl", "lvgl", Some(pr.gh_token.clone()))
-            } else {
-                Ctx::new(socket, "lvgl", "lvgl", None)
-            };
-            on_run(ctx, job, pr).await
+        Commands::DispatchRun {
+            socket,
+            job,
+            comment_path,
+        } => {
+            let ctx = Ctx::default();
+            on_run(ctx, socket, job, comment_path).await
+        }
+        Commands::CommentPR {
+            comment_path,
+            pr_number,
+            gh_token,
+            signature,
+        } => {
+            let ctx = Ctx::default();
+            on_comment_pr(ctx, comment_path, pr_number, gh_token, signature).await
         }
     }
 }
