@@ -1,4 +1,4 @@
-# ejlv_cli
+# ejlv
 
 A command-line interface tool for dispatching jobs to EJD (EJ Dispatcher) in the [LVGL](https://github.com/lvgl/lvgl.git) testing workspace.
 
@@ -18,21 +18,14 @@ This tool is mainly used by [LVGL](https://lvgl.io)'s CI pipeline to dispatch jo
 ## Installation
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd ejlv_cli
-
-# Build the CLI tool
-cargo build --release
-
-# The binary will be available at target/release/ejlv_cli
+cargo install ejlv
 ```
 
 ## Usage
 
 ### Basic Commands
 
-ejlv_cli provides two main commands for job dispatching:
+`ejlv` provides two main commands for job dispatching:
 
 #### Dispatch Build Job
 
