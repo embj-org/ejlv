@@ -1,18 +1,23 @@
 use std::path::Path;
 
 use ej_dispatcher_sdk::{
-    EjRunResult, ejjob::EjJobApi, fetch_jobs::fetch_jobs, fetch_run_result::fetch_run_result,
+    EjJobType, EjRunResult, ejjob::EjJobApi, fetch_jobs::fetch_jobs,
+    fetch_run_result::fetch_run_result,
 };
 use tracing::{info, warn};
 
 use crate::prelude::*;
 
-pub async fn fetch_latest_job_result_from_commit(
+pub async fn fetch_latest_run_result_from_commit(
     socket: &Path,
     commit: String,
 ) -> Result<Option<EjRunResult>> {
     info!("Fecthing jobs associated with commit {commit}");
     let mut jobs = fetch_jobs(socket, commit.clone()).await?;
+    jobs = jobs
+        .into_iter()
+        .filter(|job| job.job_type == EjJobType::BuildAndRun)
+        .collect();
     if jobs.len() > 1 {
         warn!("Found multiple jobs associated with commit '{commit}'. Using latest one");
         EjJobApi::sort_by_finished_desc(&mut jobs);

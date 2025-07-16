@@ -2,7 +2,7 @@ use std::{path::PathBuf, time::Duration};
 
 use crate::cli::{Cli, Commands, DispatchArgs};
 use crate::comment::generate_comment;
-use crate::ej::fetch_latest_job_result_from_commit;
+use crate::ej::fetch_latest_run_result_from_commit;
 use crate::gh::{add_comment_signature, get_latest_master_commit, get_pr_comment};
 use crate::parser::parse_run_result;
 use crate::prelude::*;
@@ -84,7 +84,7 @@ pub async fn on_run(
     debug!("Job result {}", result);
     let latest_master_commit = get_latest_master_commit(&ctx, &octocrab).await?;
     let master_result = if let Some(result) =
-        fetch_latest_job_result_from_commit(&socket, latest_master_commit).await?
+        fetch_latest_run_result_from_commit(&socket, latest_master_commit).await?
     {
         info!("Parsing latest master result");
         parse_run_result(result)?
