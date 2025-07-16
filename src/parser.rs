@@ -17,12 +17,12 @@ pub struct Scene {
 pub fn parse_run_result(result: EjRunResult) -> Result<Vec<(EjBoardConfigApi, Vec<Scene>)>> {
     let mut results = Vec::new();
     for (board_config, result) in result.results {
-        results.push((board_config, parse_result(result)?));
+        results.push((board_config, parse_result(&result)?));
     }
     Ok(results)
 }
 
-pub fn parse_result(result: String) -> Result<Vec<Scene>> {
+pub fn parse_result(result: &str) -> Result<Vec<Scene>> {
     let mut found_start_of_results = false;
     let mut found_header = false;
     let mut scenes = Vec::new();
