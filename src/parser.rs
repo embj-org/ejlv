@@ -72,7 +72,7 @@ pub fn parse_result(result: String) -> Result<Vec<Scene>> {
 }
 
 fn parse_int_col(cols: &Vec<&str>, line_num: usize, col_num: usize) -> Result<i32> {
-    cols[col_num].parse().map_err(|err: ParseIntError| {
+    cols[col_num].trim().parse().map_err(|err: ParseIntError| {
         Error::ParseIntFailed(line_num, col_num, cols[col_num].to_string(), err)
     })
 }
