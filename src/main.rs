@@ -1,14 +1,17 @@
 use std::{path::PathBuf, time::Duration};
 
+use crate::chart::{COLORS, RunResult, create_comparison_chart};
 use crate::cli::{Cli, Commands, DispatchArgs};
 use crate::comment::generate_comment;
 use crate::ej::fetch_latest_run_result_from_commit;
 use crate::gh::{add_comment_signature, get_latest_master_commit, get_pr_comment};
-use crate::parser::parse_run_result;
+use crate::parser::{parse_run_result, parse_scenes};
 use crate::prelude::*;
 use crate::result::calculate_result_delta;
+use crate::scene::SceneMetric;
 use clap::Parser;
 use ej_dispatcher_sdk::{dispatch_build, dispatch_run};
+mod chart;
 mod cli;
 mod comment;
 mod ej;
@@ -17,7 +20,10 @@ mod gh;
 mod parser;
 mod prelude;
 mod result;
+mod scene;
 use octocrab::Octocrab;
+use plotters::prelude::{IntoDrawingArea, SVGBackend};
+use plotters::style::RGBColor;
 use tracing::{debug, error, info};
 
 pub struct Ctx {
@@ -39,6 +45,52 @@ impl Ctx {
     }
 }
 
+pub fn create_benchmark_graph(
+    input_dir: PathBuf,
+    output: PathBuf,
+    metric: SceneMetric,
+) -> Result<()> {
+    let mut paths: Vec<PathBuf> = std::fs::read_dir(input_dir)?
+        .into_iter()
+        .map(|dir_entry| dir_entry.expect("Invalid dir_entry").path())
+        .collect();
+
+    // So multiple runs with the same input produce the same graph
+    paths.sort();
+
+    let mut run_results = Vec::new();
+    for path in paths {
+        if !path.is_file() {
+            continue;
+        }
+        let raw_results = std::fs::read_to_string(&path)?;
+        let scenes = parse_scenes(&raw_results)?;
+        let run_name = path
+            .file_stem()
+            .ok_or(Error::FailedToGetFileName(path.clone()))?
+            .to_str()
+            .ok_or(Error::FilePathConversionFailed(path.clone()))?;
+
+        let result = RunResult::new(run_name, scenes);
+        run_results.push(result);
+    }
+
+    let root = SVGBackend::new(&output, (1200, 800)).into_drawing_area();
+    root.fill(&RGBColor(245, 245, 245))?;
+
+    let mut colors = COLORS.to_vec();
+
+    // TODO: Generate some other colors here to avoid duplication
+    let mut i = 0;
+    while run_results.len() > colors.len() {
+        colors.push(colors[i]);
+        i = (i + 1) % colors.len();
+    }
+
+    create_comparison_chart(&root, run_results.as_slice(), &metric, &colors)?;
+    root.present()?;
+    Ok(())
+}
 pub async fn on_build(socket: PathBuf, job: DispatchArgs) -> Result<()> {
     let result = dispatch_build(
         &socket,
@@ -159,5 +211,10 @@ async fn main() -> Result<()> {
             let ctx = Ctx::default();
             on_comment_pr(ctx, comment_path, pr_number, gh_token, signature).await
         }
+        Commands::BenchmarkGraph {
+            input_dir,
+            output,
+            metric,
+        } => create_benchmark_graph(input_dir, output, metric),
     }
 }

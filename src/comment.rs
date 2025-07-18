@@ -1,7 +1,7 @@
 use ej_config::ej_board_config::EjBoardConfigApi;
 use tracing::warn;
 
-use crate::parser::Scene;
+use crate::scene::Scene;
 
 fn format_cell(value: i32, delta: i32) -> String {
     if delta == 0 {

@@ -15,6 +15,7 @@ octocrab = "0.44.1"
 tracing-subscriber = "0.3.19"
 tracing = "0.1.41"
 ej-config = "0.3.0"
+plotters = "0.3.7"
 
 [dev-dependencies]
 uuid = { version = "1.17.0", features = ["v4", "serde"] }

@@ -5,6 +5,8 @@
 use clap::{Args, Parser, Subcommand};
 use std::path::PathBuf;
 
+use crate::scene::SceneMetric;
+
 /// EJ Command Line Interface for testing and system setup.
 #[derive(Parser)]
 #[command(name = "ejlv_cli")]
@@ -57,6 +59,25 @@ pub enum Commands {
         /// A comment (hidden) signature
         #[arg(long)]
         signature: String,
+    },
+
+    /// Generate Benchmark Results Graph
+    BenchmarkGraph {
+        /// Path to a folder containing multiple files with the benchmark results
+        /// Each file shall contain only one benchmark result
+        /// The parser expects to find `Benchmark Summary`
+        /// Previous lines are ignored so it's safe to pass the full output of a benchmark
+        /// even if stuff was logged before the results
+        #[arg(short, long)]
+        input_dir: PathBuf,
+
+        /// Path to the output SVG file
+        #[arg(short, long)]
+        output: PathBuf,
+
+        /// The metric you're interested in
+        #[arg(short, long)]
+        metric: SceneMetric,
     },
 }
 

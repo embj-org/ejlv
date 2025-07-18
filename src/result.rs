@@ -1,6 +1,7 @@
-use crate::parser::Scene;
 use ej_config::ej_board_config::EjBoardConfigApi;
 use tracing::warn;
+
+use crate::scene::Scene;
 
 pub fn calculate_result_delta(
     new_results: Vec<(EjBoardConfigApi, Vec<Scene>)>,

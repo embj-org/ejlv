@@ -3,26 +3,17 @@ use std::num::ParseIntError;
 use ej_config::ej_board_config::EjBoardConfigApi;
 use ej_dispatcher_sdk::EjRunResult;
 
-use crate::prelude::*;
+use crate::{prelude::*, scene::Scene};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Scene {
-    pub scene_name: String,
-    pub avg_cpu: i32,
-    pub avg_fps: i32,
-    pub avg_time: i32,
-    pub render_time: i32,
-    pub flush_time: i32,
-}
 pub fn parse_run_result(result: EjRunResult) -> Result<Vec<(EjBoardConfigApi, Vec<Scene>)>> {
     let mut results = Vec::new();
     for (board_config, result) in result.results {
-        results.push((board_config, parse_result(&result)?));
+        results.push((board_config, parse_scenes(&result)?));
     }
     Ok(results)
 }
 
-pub fn parse_result(result: &str) -> Result<Vec<Scene>> {
+pub fn parse_scenes(result: &str) -> Result<Vec<Scene>> {
     let mut found_start_of_results = false;
     let mut found_header = false;
     let mut scenes = Vec::new();
@@ -79,7 +70,7 @@ fn parse_int_col(cols: &Vec<&str>, line_num: usize, col_num: usize) -> Result<i3
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::{Scene, parse_result};
+    use crate::parser::{Scene, parse_scenes};
 
     #[test]
     fn parse_results() {
@@ -105,7 +96,7 @@ Widgets demo, 32%, 61, 11, 2, 9
 All scenes avg.,64%, 60, 9, 2, 7
 ";
 
-        let actual = parse_result(results).expect("Failed to parse result");
+        let actual = parse_scenes(results).expect("Failed to parse result");
         let expected = vec![
             Scene {
                 scene_name: "Empty screen".to_string(),
