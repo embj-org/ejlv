@@ -14,6 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Install Dependencies
+      run: |
+        sudo apt update -y
+        sudo apt install -y libfontconfig-dev
     - name: Build 
       run: cargo build
     - name: Test
