@@ -91,7 +91,7 @@ pub fn create_comparison_chart(
         .disable_y_mesh()
         .x_desc(metric.label())
         .y_desc("Scenes")
-        .disable_y_axis()
+        .y_labels(0)
         .x_label_offset(total_width_per_scene)
         .draw()?;
 
