@@ -49,6 +49,8 @@ pub fn create_benchmark_graph(
     input_dir: PathBuf,
     output: PathBuf,
     metric: SceneMetric,
+    h_res: u32,
+    v_res: u32,
 ) -> Result<()> {
     let mut paths: Vec<PathBuf> = std::fs::read_dir(input_dir)?
         .into_iter()
@@ -86,8 +88,8 @@ pub fn create_benchmark_graph(
         colors.push(colors[i]);
         i = (i + 1) % colors.len();
     }
-
-    create_comparison_chart(&root, run_results.as_slice(), &metric, &colors)?;
+    let title = format!("{}x{}", h_res, v_res);
+    create_comparison_chart(&root, &title, run_results.as_slice(), &metric, &colors)?;
     root.present()?;
     Ok(())
 }
@@ -215,6 +217,8 @@ async fn main() -> Result<()> {
             input_dir,
             output,
             metric,
-        } => create_benchmark_graph(input_dir, output, metric),
+            h_res,
+            v_res,
+        } => create_benchmark_graph(input_dir, output, metric, h_res, v_res),
     }
 }

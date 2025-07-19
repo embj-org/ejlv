@@ -78,6 +78,12 @@ pub enum Commands {
         /// The metric you're interested in
         #[arg(short, long)]
         metric: SceneMetric,
+
+        #[arg(long)]
+        h_res: u32,
+
+        #[arg(long)]
+        v_res: u32,
     },
 }
 

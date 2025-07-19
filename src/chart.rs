@@ -48,6 +48,7 @@ fn get_max_value(scenes: &Vec<Scene>, metric: &SceneMetric) -> i32 {
 
 pub fn create_comparison_chart(
     root: &DrawingArea<SVGBackend<'_>, Shift>,
+    title: &str,
     results: &[RunResult],
     metric: &SceneMetric,
     colors: &[RGBColor],
@@ -74,7 +75,7 @@ pub fn create_comparison_chart(
     let run_names: Vec<&str> = results.iter().map(|r| r.run_name.as_str()).collect();
     let mut chart = ChartBuilder::on(&root)
         .caption(
-            &format!("{} Comparison [{}]", metric.label(), run_names.join(", ")),
+            &format!("{} - {} [{}]", title, metric.label(), run_names.join(", ")),
             ("sans-serif", 20),
         )
         .margin(10)
