@@ -134,6 +134,7 @@ pub async fn on_run(
         info!("Run Ok");
     } else {
         error!("Run Failed");
+        return Err(Error::RunError(result));
     }
     debug!("Job result {}", result);
     let latest_master_commit = get_latest_master_commit(&ctx, &octocrab).await?;

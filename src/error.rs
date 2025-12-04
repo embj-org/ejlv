@@ -1,5 +1,6 @@
 use std::{num::ParseIntError, path::PathBuf};
 
+use ej_dispatcher_sdk::EjRunResult;
 use plotters::prelude::{DrawingBackend, SVGBackend};
 
 /// Main error type
@@ -45,4 +46,7 @@ pub enum Error {
 
     #[error("Failed to convert file path to string {0}")]
     FilePathConversionFailed(PathBuf),
+
+    #[error("Run error {0:?}")]
+    RunError(EjRunResult),
 }
