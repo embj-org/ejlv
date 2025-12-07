@@ -496,7 +496,7 @@ dependencies = [
 
 [[package]]
 name = "ejlv"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "clap",
  "ej-config",
