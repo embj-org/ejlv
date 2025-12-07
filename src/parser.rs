@@ -2,12 +2,17 @@ use std::num::ParseIntError;
 
 use ej_config::ej_board_config::EjBoardConfigApi;
 use ej_dispatcher_sdk::EjRunResult;
+use tracing::info;
 
 use crate::{prelude::*, scene::Scene};
 
 pub fn parse_run_result(result: EjRunResult) -> Result<Vec<(EjBoardConfigApi, Vec<Scene>)>> {
     let mut results = Vec::new();
     for (board_config, result) in result.results {
+        if result == "Skip" {
+            info!("Skipping results for board config '{}'", board_config.name);
+            continue;
+        }
         results.push((board_config, parse_scenes(&result)?));
     }
     Ok(results)
